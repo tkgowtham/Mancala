@@ -1,4 +1,6 @@
 import time
+import copy
+
 class Palankuzhi:
     def __init__(self):
         self.board = [
@@ -79,8 +81,8 @@ class Palankuzhi:
         return row, col
     
     def setBoard(self, board, player_coins):
-        self.board = board
-        self.player_coins = player_coins
+        self.board = board.copy()
+        self.player_coins = player_coins[:]
     
     def moveCoins(self, player_id, row, col):
         #player_id = player_id - 1
@@ -106,44 +108,7 @@ class Palankuzhi:
             self.player_coins[player_id] += self.board[row][col]
             self.board[row][col] = 0
             return
-"""            if row == 0: 
-                if col == 0:
-                    self.player_coins[player_id] += self.board[1][0]
-                    self.board[1][0] = 0
-                else:
-                    self.player_coins[player_id] += self.board[row][col - 1]
-                    self.board[row][col - 1] = 0
-            elif row == 1:
-                if col == 6:
-                    self.player_coins[player_id] += self.board[0][6]
-                    self.board[0][6] = 0
-                else:
-                    self.player_coins[player_id] += self.board[row][col + 1]
-                    self.board[row][col + 1] = 0"""
-
-"""
-            if cur_coins == 0:
-                if row == 0 and col > 0:
-                    cur_coins = self.board[row][col - 1]
-                elif row == 0 and col == 0:
-                    cur_coins = self.board[1][0]
-                elif row == 1 and col < 4:
-                    cur_coins = self.board[row][col + 1]
-                elif row == 1 and col == 4:
-                    cur_coins = self.board[0][4]"""
-
-
-
-"""     if player_id == 0:
-            if row == 0 and col > 0:
-                self.player1_coins += self.board[row][col - 1]
-            elif row == 0 and col == 0:
-                self.player1_coins += self.board[1][0]
-        else:
-            if row == 1 and col < 4:
-                self.player2_coins += self.board[row][col + 1]
-            elif row == 1 and col == 4:
-                self.player2_coins += self.board[0][4]"""
+            
 class state:
     def __init__(self):
         self.board = None
@@ -160,8 +125,28 @@ class Tree:
         self.root.board = self.game.board
         self.dfs(root=self.root, player_id=player_id)
 
+    '''
+    def dfs_test(self, root, player_id):
+        self.game.setBoard(copy.deepcopy(root.board), root.player_coins[:])
+        boardCopy = copy.deepcopy(root.board)
+        playerCoinsCopy = root.player_coins[:]
+        
+        for i in range(7):
+            if self.game.validMove(row=player_id, col=i):
+                print(i)
+                self.game.printBoard()
+                self.game.moveCoins(player_id=player_id, row=player_id, col=i)
+                self.game.printBoard()
+                self.game.printStats()
+                print()
+                self.game.setBoard(copy.deepcopy(boardCopy), playerCoinsCopy[:])
+        '''
+
+
     def dfs(self, root, player_id):
-        self.game.setBoard(root.board.copy(), root.player_coins[:])
+        self.game.setBoard(copy.deepcopy(root.board), root.player_coins[:])
+        boardCopy = copy.deepcopy(root.board)
+        playerCoinsCopy = root.player_coins[:]
         win, winner = self.game.checkForWin()
         if win:
             if winner == self.curr_player:
@@ -171,16 +156,24 @@ class Tree:
         next_id = not player_id
         for i in range(7):
             if self.game.validMove(row=player_id,col=i):
+                #print()
                 root.next_state[i] = state()
+                #print(i, player_id)
+                #self.game.printBoard()
                 self.game.moveCoins(player_id=player_id, row=player_id, col=i)
-                self.game.printBoard()
-                root.next_state[i].board = self.game.board
-                root.next_state[i].player_coins = self.game.player_coins
+                root.next_state[i].board = copy.deepcopy(self.game.board)
+                root.next_state[i].player_coins = self.game.player_coins[:]
+                #self.game.printBoard()
                 root.no_of_states += 1
-                root.no_of_wins += self.dfs(root=root.next_state[i], player_id=next_id)
-                self.game.setBoard(root.board.copy(), root.player_coins[:])
+                nobj = self.dfs(root=copy.deepcopy(root.next_state[i]), player_id=next_id)
+                #print(nobj)
+                if isinstance(nobj, tuple) or isinstance(nobj, list):
+                    root.no_of_states += int(nobj[0])
+                    root.no_of_wins += int(nobj[1])
+                #print(root.no_of_states, root.no_of_wins)
+                self.game.setBoard(copy.deepcopy(boardCopy), playerCoinsCopy[:])
         
-        return root.no_of_wins
+        return [root.no_of_states, root.no_of_wins]
 
     def set_next_state(self,index):
         self.root = self.root.next_state[index]
@@ -200,8 +193,8 @@ class Tree:
                     if self.root.next_state[i].player_coins[self.curr_player] > max_coins:
                         max_coins = self.root.next_state[i].player_coins[self.curr_player]
                         best_id = i
-        self.set_next_state(i)
-        return i
+        self.set_next_state(best_id)
+        return best_id
 
 
 def manual():
@@ -250,5 +243,11 @@ def AIopp():
             break
         player_id = not player_id
 
+def testing():
+    game = Palankuzhi()
+    game.printBoard()
+    game.printStats()
+    ai = Tree(0)
+
 if __name__ == '__main__':
-    AIopp()
+    manual()
